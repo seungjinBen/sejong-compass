@@ -91,7 +91,7 @@ export async function getProfile(): Promise<UserProfile | null> {
   mayFail();
   const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
   if (raw) return JSON.parse(raw) as UserProfile;
-  return getScenarioData().profile;
+  return null;
 }
 
 export async function saveProfile(p: Partial<UserProfile>): Promise<UserProfile> {
@@ -145,7 +145,7 @@ export async function getTarget(): Promise<TargetCondition | null> {
   await randomDelay();
   const raw = localStorage.getItem(STORAGE_KEYS.TARGET);
   if (raw) return JSON.parse(raw) as TargetCondition;
-  return getScenarioData().target;
+  return null;
 }
 
 export async function saveTarget(t: TargetCondition): Promise<void> {
