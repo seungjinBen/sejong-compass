@@ -1,0 +1,88 @@
+import type { DoDreamProgram } from '@/types';
+
+export const defaultDoDreamPrograms: DoDreamProgram[] = [
+  {
+    id: 'dodream-001',
+    category: '현직자멘토링',
+    title: '대용량 트래픽 백엔드 현직자 멘토링',
+    reason: {
+      headline: '부족 역량 Kafka·Redis를 채우고 10/2까지 신청 가능 (+3%p)',
+      metrics: [
+        { label: '관련 갭', value: 'Kafka, Redis' },
+        { label: '기대 효과', value: '+3%p' },
+        { label: '신청 마감', value: 'D-9 (10/2)' },
+      ],
+      evidences: [],
+      alternatives: [],
+    },
+    applyDeadline: '2026-10-02',
+    capacity: { current: 18, max: 25 },
+    creditLinked: false,
+    externalUrl: 'https://dodream.sejong.ac.kr',
+    relatedGapKeys: ['STACK', 'PROJECT'],
+    expectedGain: 3,
+  },
+  {
+    id: 'dodream-002',
+    category: '마이크로디그리',
+    title: 'Cloud Native 마이크로디그리',
+    reason: {
+      headline: '기술 스택(Docker·AWS) 갭 해소에 직결되는 학점 연계 과정 (+4%p)',
+      metrics: [
+        { label: '관련 갭', value: 'Docker, AWS' },
+        { label: '기대 효과', value: '+4%p' },
+        { label: '학점 연계', value: '3학점' },
+      ],
+      evidences: [],
+      alternatives: [],
+    },
+    applyDeadline: '2026-11-15',
+    capacity: { current: 12, max: 20 },
+    creditLinked: true,
+    externalUrl: 'https://dodream.sejong.ac.kr',
+    relatedGapKeys: ['STACK'],
+    expectedGain: 4,
+  },
+  {
+    id: 'dodream-003',
+    category: '오픈소스캠프',
+    title: '오픈소스 기여 캠프 — Spring 생태계',
+    reason: {
+      headline: '직무 프로젝트 건수 부족(2건) 해소 및 Spring Boot 역량 강화 (+2%p)',
+      metrics: [
+        { label: '현재 프로젝트', value: '2건' },
+        { label: '권장 건수', value: '3건 이상' },
+        { label: '기대 효과', value: '+2%p' },
+      ],
+      evidences: [],
+      alternatives: [],
+    },
+    applyDeadline: '2026-10-20',
+    capacity: { current: 8, max: 15 },
+    creditLinked: false,
+    externalUrl: 'https://dodream.sejong.ac.kr',
+    relatedGapKeys: ['PROJECT', 'STACK'],
+    expectedGain: 2,
+  },
+  {
+    id: 'dodream-004',
+    category: '부트캠프',
+    title: 'Docker/Kubernetes 집중 부트캠프',
+    reason: {
+      headline: '기술 스택 가장 큰 갭(Docker 0.1) 해소 — 겨울방학 집중 과정 (+3%p)',
+      metrics: [
+        { label: '현재 Docker 숙련도', value: '0.1 (미보유)' },
+        { label: '기대 효과', value: '+3%p' },
+        { label: '요구 공고', value: '162 / 208건 (78%)' },
+      ],
+      evidences: [],
+      alternatives: [],
+    },
+    applyDeadline: '2026-12-01',
+    capacity: { current: 23, max: 30 },
+    creditLinked: false,
+    externalUrl: 'https://dodream.sejong.ac.kr',
+    relatedGapKeys: ['STACK'],
+    expectedGain: 3,
+  },
+];
