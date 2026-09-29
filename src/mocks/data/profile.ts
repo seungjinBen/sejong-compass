@@ -10,6 +10,7 @@ export const defaultProfile: UserProfile = {
   semester: 6,
   jobField: 'BACKEND',
   gpa: 3.85,
+  gpaScale: 4.5,
   language: { name: 'TOEIC', score: 870 },
   certifications: ['SQLD'],
   awards: ['2025 SW 해커톤 우수상', 'ACM-ICPC 본선 진출'],
@@ -26,7 +27,6 @@ export const defaultProfile: UserProfile = {
       description: '오픈소스 기여 프로젝트. PR 5건 병합.',
     },
   ],
-  codingTest: { platform: '백준', tier: 'Gold I' },
   githubUrl: 'https://github.com/sejong-kim',
   skills: [
     {
@@ -142,12 +142,12 @@ export const coldStartProfile: UserProfile = {
   semester: 2,
   jobField: 'BACKEND',
   gpa: 3.5,
+  gpaScale: 4.5,
   language: null,
   certifications: [],
   awards: [],
   internships: [],
   projects: [],
-  codingTest: null,
   skills: [
     {
       id: 'skill-python-cold',
@@ -170,6 +170,7 @@ export const seniorProfile: UserProfile = {
   semester: 8,
   jobField: 'BACKEND',
   gpa: 4.1,
+  gpaScale: 4.5,
   language: { name: 'TOEIC', score: 905 },
   certifications: ['SQLD', 'AWS Solutions Architect Associate'],
   awards: ['2025 SW 해커톤 최우수상'],
@@ -181,7 +182,6 @@ export const seniorProfile: UserProfile = {
       description: 'MSA 기반 대규모 트래픽 처리 백엔드 시스템 설계 및 구현',
     },
   ],
-  codingTest: { platform: '백준', tier: 'Platinum IV' },
   githubUrl: 'https://github.com/kim-grad',
   skills: [
     { id: 'skill-java-s', name: 'Java', category: 'LANG', proficiency: 0.9, evidences: [{ kind: 'COURSE', label: '객체지향프로그래밍(A+)', weight: 0.6 }] },

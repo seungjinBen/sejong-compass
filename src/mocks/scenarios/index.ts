@@ -4,8 +4,9 @@ import {
   defaultGapAxes, defaultMatchRate, defaultTargetMatchRate,
   seniorGapAxes, seniorMatchRate, seniorTargetMatchRate,
   defaultQualitativeInsights, seniorQualitativeInsights,
+  coldStartGapAxes, coldStartMatchRate, coldStartTargetMatchRate,
 } from '@/mocks/data/gap';
-import { defaultRoadmap, seniorRoadmap } from '@/mocks/data/roadmap';
+import { defaultRoadmap, seniorRoadmap, coldStartRoadmap } from '@/mocks/data/roadmap';
 import { defaultDoDreamPrograms } from '@/mocks/data/dodream';
 import { defaultOpportunities } from '@/mocks/data/opportunities';
 
@@ -44,19 +45,11 @@ export const scenarios: Record<ScenarioId, Scenario> = {
     label: '이도전 (신입생)',
     profile: coldStartProfile,
     target: null,
-    matchRate: 0,
-    targetMatchRate: 70,
-    gapAxes: [],
+    matchRate: coldStartMatchRate,
+    targetMatchRate: coldStartTargetMatchRate,
+    gapAxes: coldStartGapAxes,
     qualitativeInsights: [],
-    roadmap: {
-      targetLabel: '직무 미설정',
-      currentMatchRate: 0,
-      targetMatchRate: 70,
-      progressPercent: 0,
-      currentSemester: '2026-2',
-      semesters: [],
-      topGaps: [],
-    },
+    roadmap: coldStartRoadmap,
     dodreamPrograms: defaultDoDreamPrograms,
     opportunities: [],
   },

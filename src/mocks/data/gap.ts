@@ -9,8 +9,8 @@ export const defaultGapAxes: GapAxis[] = [
     label: '전공학점',
     mine: 85,
     required: 80,
-    myValueText: 'GPA 3.85',
-    requiredText: 'GPA 3.5 이상',
+    myValueText: '학점 3.85/4.5',
+    requiredText: '학점 3.5/4.5 이상',
     status: 'MET',
     deltaPercent: 0,
     evidences: [{ kind: 'COURSE', label: '전체 이수 학점 기반', weight: 1 }],
@@ -56,11 +56,11 @@ export const defaultGapAxes: GapAxis[] = [
     label: '코딩테스트',
     mine: 72,
     required: 80,
-    myValueText: '백준 Gold I',
+    myValueText: '코딩테스트 Gold I',
     requiredText: 'Platinum IV 권장',
     status: 'PARTIAL',
     deltaPercent: -2,
-    evidences: [{ kind: 'CODING_TEST', label: '백준 Gold I', weight: 1 }],
+    evidences: [{ kind: 'CODING_TEST', label: '코딩테스트 Gold I', weight: 1 }],
   },
   {
     key: 'STACK',
@@ -74,6 +74,81 @@ export const defaultGapAxes: GapAxis[] = [
     evidences: [
       { kind: 'PROJECT', label: 'SW 캡스톤 디자인 II (일부)', weight: 0.1 },
     ],
+  },
+];
+
+export const coldStartMatchRate = 15;
+export const coldStartTargetMatchRate = 70;
+
+// Baseline requirements for a backend developer track — "mine" stays low since
+// the student hasn't entered personal spec data yet, but "required" shows what's
+// generally expected so the radar isn't just blank.
+export const coldStartGapAxes: GapAxis[] = [
+  {
+    key: 'GPA',
+    label: '전공학점',
+    mine: 30,
+    required: 80,
+    myValueText: '입력 전',
+    requiredText: '학점 3.5/4.5 이상',
+    status: 'LACK',
+    deltaPercent: -5,
+    evidences: [],
+  },
+  {
+    key: 'LANGUAGE',
+    label: '어학',
+    mine: 10,
+    required: 80,
+    myValueText: '입력 전',
+    requiredText: 'TOEIC 800 이상',
+    status: 'LACK',
+    deltaPercent: -7,
+    evidences: [],
+  },
+  {
+    key: 'CERT',
+    label: '자격증',
+    mine: 0,
+    required: 60,
+    myValueText: '입력 전',
+    requiredText: '직무 관련 자격증 1개',
+    status: 'LACK',
+    deltaPercent: -6,
+    evidences: [],
+  },
+  {
+    key: 'PROJECT',
+    label: '직무 프로젝트',
+    mine: 0,
+    required: 75,
+    myValueText: '입력 전',
+    requiredText: '3건 이상 권장',
+    status: 'LACK',
+    deltaPercent: -8,
+    evidences: [],
+  },
+  {
+    key: 'CODING_TEST',
+    label: '코딩테스트',
+    mine: 5,
+    required: 80,
+    myValueText: '입력 전',
+    requiredText: 'Platinum IV 권장',
+    status: 'LACK',
+    deltaPercent: -8,
+    evidences: [],
+  },
+  {
+    key: 'STACK',
+    label: '기술 스택',
+    mine: 10,
+    required: 80,
+    myValueText: '입력 전',
+    requiredText: 'Docker·AWS 중급 이상',
+    status: 'LACK',
+    deltaPercent: -7,
+    evidences: [],
   },
 ];
 

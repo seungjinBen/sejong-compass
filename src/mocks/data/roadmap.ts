@@ -52,10 +52,10 @@ const tasks2026_2: RoadmapTask[] = [
     ],
   },
   {
-    id: 'task-baekjoon',
+    id: 'task-coding-test-tier',
     semester: '2026-2',
     type: 'CODING_TEST',
-    title: '백준 Gold I → Platinum IV',
+    title: '코딩테스트 Gold I → Platinum IV',
     status: 'IN_PROGRESS',
     skillIds: [],
     expectedGain: 2,
@@ -67,7 +67,7 @@ const tasks2026_2: RoadmapTask[] = [
         { label: '권장 등급', value: 'Platinum IV' },
         { label: '기대 효과', value: '+2%p' },
       ],
-      evidences: [{ kind: 'CODING_TEST', label: '백준 Gold I', weight: 1 }],
+      evidences: [{ kind: 'CODING_TEST', label: '코딩테스트 Gold I', weight: 1 }],
       alternatives: [],
     },
   },
@@ -264,6 +264,123 @@ export const defaultRoadmap: Roadmap = {
     { skillId: 'skill-redis', name: 'Redis', importance: 2, status: 'PARTIAL' },
     { skillId: 'skill-kafka', name: 'Kafka', importance: 1, status: 'LACK' },
   ],
+};
+
+// Starter roadmap for a student who hasn't filled in personal specs yet —
+// shows grade-appropriate baseline certifications so it's not empty.
+const coldStartTasks2026_2: RoadmapTask[] = [
+  {
+    id: 'task-cold-basic-course',
+    semester: '2026-2',
+    type: 'COURSE',
+    title: '자료구조 · 알고리즘 수강',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 2,
+    constraint: '1학년 기초 전공',
+    reason: baseReason('백엔드 진로의 기초가 되는 전공 과목입니다.'),
+  },
+  {
+    id: 'task-cold-entry-cert',
+    semester: '2026-2',
+    type: 'CERT',
+    title: '정보처리기능사 취득',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 1,
+    constraint: '1학년 추천 입문 자격증',
+    reason: baseReason('전공 입문 단계에서 취득하기 좋은 기본 자격증입니다.'),
+  },
+];
+
+const coldStartTasks2027_2: RoadmapTask[] = [
+  {
+    id: 'task-cold-db-course',
+    semester: '2027-2',
+    type: 'COURSE',
+    title: '데이터베이스 · 웹프로그래밍 수강',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 3,
+    constraint: '2학년 전공 심화',
+    reason: baseReason('백엔드 실무의 기반이 되는 DB·웹 기초를 다집니다.'),
+  },
+  {
+    id: 'task-cold-first-project',
+    semester: '2027-2',
+    type: 'PROJECT',
+    title: '첫 토이 프로젝트 진행',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 3,
+    constraint: '2학년 자율 진행',
+    reason: baseReason('직무 프로젝트 경험을 쌓기 시작할 시점입니다.'),
+  },
+];
+
+const coldStartTasks2028_2: RoadmapTask[] = [
+  {
+    id: 'task-cold-sqld',
+    semester: '2028-2',
+    type: 'CERT',
+    title: 'SQLD 취득',
+    status: 'TODO',
+    skillIds: ['skill-sql'],
+    expectedGain: 3,
+    constraint: '3학년 추천 자격증',
+    reason: baseReason('데이터베이스 역량을 자격증으로 공식 인증합니다.'),
+  },
+  {
+    id: 'task-cold-jpe',
+    semester: '2028-2',
+    type: 'CERT',
+    title: '정보처리기사 취득',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 3,
+    constraint: '3학년 추천 자격증',
+    reason: baseReason('IT 직군 채용에서 폭넓게 인정받는 국가기술자격증입니다.'),
+  },
+];
+
+const coldStartTasks2029_2: RoadmapTask[] = [
+  {
+    id: 'task-cold-aws',
+    semester: '2029-2',
+    type: 'CERT',
+    title: 'AWS Cloud Practitioner 자격증',
+    status: 'TODO',
+    skillIds: ['skill-aws'],
+    expectedGain: 3,
+    constraint: '4학년 추천 자격증',
+    reason: baseReason('클라우드 기초 역량을 증명해 채용 경쟁력을 높입니다.'),
+  },
+  {
+    id: 'task-cold-apply',
+    semester: '2029-2',
+    type: 'EVENT',
+    title: '공채·인턴 지원 시작',
+    status: 'TODO',
+    skillIds: [],
+    expectedGain: 0,
+    constraint: '4학년 채용 시즌',
+    reason: baseReason('본격적인 취업 준비 및 지원을 시작할 시점입니다.'),
+  },
+];
+
+export const coldStartRoadmap: Roadmap = {
+  targetLabel: '백엔드 개발자 (진로 설정 전)',
+  currentMatchRate: 15,
+  targetMatchRate: 70,
+  progressPercent: 0,
+  currentSemester: '2026-2',
+  semesters: [
+    { key: '2026-2', label: '2026년 2학기 (1학년)', predictedMatchRate: 20, tasks: coldStartTasks2026_2 },
+    { key: '2027-2', label: '2027년 2학기 (2학년)', predictedMatchRate: 35, tasks: coldStartTasks2027_2 },
+    { key: '2028-2', label: '2028년 2학기 (3학년)', predictedMatchRate: 55, tasks: coldStartTasks2028_2 },
+    { key: '2029-2', label: '2029년 2학기 (4학년)', predictedMatchRate: 70, tasks: coldStartTasks2029_2 },
+  ],
+  topGaps: [],
 };
 
 export const seniorRoadmap: Roadmap = {

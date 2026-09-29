@@ -35,8 +35,8 @@ export const defaultJobs: JobPosting[] = [
         ],
       },
       {
-        text: '백준 Gold I 코딩테스트 역량 보유',
-        evidences: [{ kind: 'CODING_TEST', label: '백준 Gold I', weight: 1 }],
+        text: '코딩테스트 Gold I 역량 보유',
+        evidences: [{ kind: 'CODING_TEST', label: '코딩테스트 Gold I', weight: 1 }],
       },
     ],
     improvements: [

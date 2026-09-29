@@ -113,7 +113,8 @@ export async function getProfile(): Promise<UserProfile | null> {
 export async function saveProfile(p: Partial<UserProfile>): Promise<UserProfile> {
   await randomDelay();
   mayFail();
-  const existing = getScenarioData().profile;
+  const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
+  const existing = raw ? (JSON.parse(raw) as UserProfile) : getScenarioData().profile;
   const merged = { ...existing, ...p };
   localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(merged));
 

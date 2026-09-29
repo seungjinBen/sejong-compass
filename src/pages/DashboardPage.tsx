@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { ExternalLink, ArrowUpRight, Target, TrendingUp, AlertCircle } from 'lucide-react';
+import { ExternalLink, ArrowUpRight, Target, TrendingUp, AlertCircle, Sparkles } from 'lucide-react';
 import { animate } from 'framer-motion';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card, CardHeader } from '@/components/common/Card';
@@ -22,7 +22,7 @@ import { updateTaskStatus as apiUpdateTaskStatus, logBehavior } from '@/api';
 import { startRealtimeSimulation } from '@/mocks/realtime';
 import { getActiveScenario } from '@/mocks/scenarios';
 import { selectUpcomingTasks, selectCompletedSemesterTasks } from '@/store/selectors';
-import type { GapAxis, TaskStatus } from '@/types';
+import type { GapAxis, TaskStatus, UserProfile } from '@/types';
 
 // Animated number hook (framer-motion)
 function useAnimatedNumber(target: number, duration = 600) {
@@ -45,6 +45,18 @@ function useAnimatedNumber(target: number, duration = 600) {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function computeSpecCompleteness(profile: UserProfile): number {
+  const checks = [
+    !!profile.language,
+    profile.certifications.length > 0,
+    profile.awards.length > 0,
+    profile.internships.length > 0,
+    profile.projects.length > 0,
+    !!profile.githubUrl,
+  ];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
 // D-day badge
@@ -70,6 +82,8 @@ export function DashboardPage() {
   const setRoadmap = useRoadmapStore((s) => s.setRoadmap);
   const qualitativeInsights = useRoadmapStore((s) => s.qualitativeInsights);
   const { opportunities, addOpportunity, updateDoDreamCapacity, showToast } = useUIStore();
+
+  const specCompleteness = profile ? computeSpecCompleteness(profile) : 0;
 
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
@@ -253,6 +267,31 @@ export function DashboardPage() {
         </div>
       )}
 
+      {/* Personal spec completeness nudge */}
+      {profile && specCompleteness < 100 && (
+        <div className="mb-5 rounded-xl bg-primary-light border border-primary/20 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0">
+              <Sparkles size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-ink">
+                개인 스펙을 채워보세요 (완성도 {specCompleteness}%)
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                자격증·프로젝트 등을 추가하면 더 다양한 기회를 보여드릴 수 있어요
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/spec')}
+            className="shrink-0 text-xs bg-primary text-white rounded-lg px-3 py-1.5 font-semibold hover:bg-primary-dark transition-colors"
+          >
+            스펙 입력하기 →
+          </button>
+        </div>
+      )}
+
       {/* Top row: Score card + Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Score Card */}
@@ -391,9 +430,22 @@ export function DashboardPage() {
               ))}
             </div>
           ) : upcomingTasks.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4 text-center">
-              이번 학기 할 일이 없습니다 🎉
-            </p>
+            <div className="py-4 text-center">
+              <p className="text-sm text-gray-400">이번 학기 할 일이 없습니다 🎉</p>
+              {specCompleteness < 100 && (
+                <div className="mt-3 mx-auto max-w-xs bg-primary-light border border-primary/20 rounded-xl p-3">
+                  <p className="text-xs text-gray-600">
+                    개인 스펙을 채우면 더 맞춤화된 할 일을 추천해드릴 수 있어요
+                  </p>
+                  <button
+                    onClick={() => navigate('/spec')}
+                    className="mt-2 text-xs bg-primary text-white rounded-lg px-3 py-1.5 font-semibold hover:bg-primary-dark transition-colors"
+                  >
+                    스펙 입력하기 →
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-2">
               {upcomingTasks.map((task) => {

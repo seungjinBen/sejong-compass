@@ -30,12 +30,12 @@ export interface UserProfile {
   semester: number;
   jobField: JobField;
   gpa: number;
+  gpaScale: number;
   language: { name: string; score: number } | null;
   certifications: string[];
   awards: string[];
   internships: string[];
   projects: { title: string; stack: string[]; description: string }[];
-  codingTest: { platform: string; tier: string } | null;
   githubUrl?: string;
   skills: Skill[];
   onboardingCompleted: boolean;
