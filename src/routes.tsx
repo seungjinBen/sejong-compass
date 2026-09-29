@@ -11,6 +11,8 @@ const DiagnosisPage = lazy(() => import('@/pages/DiagnosisPage').then(m => ({ de
 const RoadmapPage = lazy(() => import('@/pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
 const DoDreamPage = lazy(() => import('@/pages/DoDreamPage').then(m => ({ default: m.DoDreamPage })));
 const SpecPage = lazy(() => import('@/pages/SpecPage').then(m => ({ default: m.SpecPage })));
+const StudentInfoPage = lazy(() => import('@/pages/StudentInfoPage').then(m => ({ default: m.StudentInfoPage })));
+const TargetEditPage = lazy(() => import('@/pages/TargetEditPage').then(m => ({ default: m.TargetEditPage })));
 
 function PageLoader() {
   return (
@@ -86,6 +88,8 @@ export function AppRoutes() {
         <Route path="/roadmap" element={<RequireOnboarding><RoadmapPage /></RequireOnboarding>} />
         <Route path="/dodream" element={<RequireOnboarding><DoDreamPage /></RequireOnboarding>} />
         <Route path="/spec" element={<RequireOnboarding><SpecPage /></RequireOnboarding>} />
+        <Route path="/student-info" element={<RequireOnboarding><StudentInfoPage /></RequireOnboarding>} />
+        <Route path="/target-edit" element={<RequireOnboarding><TargetEditPage /></RequireOnboarding>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Suspense>

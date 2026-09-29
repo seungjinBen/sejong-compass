@@ -14,54 +14,24 @@ import {
 } from '@/api';
 import { EvidenceTooltip } from '@/components/common/EvidenceTooltip';
 import { defaultJobs } from '@/mocks/data/jobs';
-import type { JobField, CompanySize, ParsedCourse, Skill } from '@/types';
+import {
+  studentInfoSchema, targetSchema,
+  JOB_FIELDS, DEPARTMENTS, REGIONS, TARGET_DATES, COMPANY_SIZES,
+} from '@/lib/profileOptions';
+import type { ParsedCourse, Skill } from '@/types';
 
 // ---- Schemas ----
-const step1Schema = z.object({
+const step1Schema = studentInfoSchema.extend({
   studentId: z
     .string()
     .regex(/^\d{8}$/, '학번은 8자리 숫자입니다')
     .refine(async (v) => checkStudentIdAvailable(v), { message: '이미 등록된 학번입니다' }),
-  name: z.string().min(1),
-  department: z.string().min(1),
-  doubleMajor: z.string().optional(),
-  minor: z.string().optional(),
-  gradeYear: z.coerce.number().min(1).max(4),
-  semester: z.coerce.number().min(1).max(8),
-  gpa: z.coerce.number().min(0),
-  gpaScale: z.coerce.number().min(0),
 });
 
-const step2Schema = z.object({
-  jobField: z.enum(['BACKEND', 'FRONTEND', 'DATA', 'AI', 'CLOUD', 'SECURITY'] as const),
-  companySize: z.enum(['LARGE', 'MID', 'STARTUP'] as const),
-  targetSalary: z.number(),
-  regions: z.array(z.string()).min(1),
-  careerType: z.enum(['NEW', 'EXPERIENCED'] as const),
-  targetCompany: z.string().min(1),
-  targetRole: z.string().min(1),
-  targetDate: z.string(),
-});
+const step2Schema = targetSchema;
 
 type Step1Form = z.infer<typeof step1Schema>;
 type Step2Form = z.infer<typeof step2Schema>;
-
-// ---- Constants ----
-const JOB_FIELDS: { value: JobField; label: string }[] = [
-  { value: 'BACKEND', label: '백엔드' },
-  { value: 'FRONTEND', label: '프론트엔드' },
-  { value: 'DATA', label: '데이터' },
-  { value: 'AI', label: 'AI/ML' },
-  { value: 'CLOUD', label: '클라우드' },
-  { value: 'SECURITY', label: '보안' },
-];
-
-const DEPARTMENTS = [
-  '컴퓨터공학과', '소프트웨어학과', '정보보호학과', '데이터사이언스학과',
-  '전자공학과', '기계공학과', '경영학과', '기타',
-];
-const REGIONS = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '제주'];
-const TARGET_DATES = ['2026-1H', '2026-2H', '2027-1H', '2027-2H', '2028-1H', '2028-2H'];
 
 // ---- Sub-components ----
 
@@ -174,7 +144,7 @@ function TranscriptTable({
 // Loading screen
 const LOAD_STEPS = ['스펙 분석 중', '공고 208건 대조 중', '갭 산출 중', '로드맵 생성 중'];
 
-function GeneratingScreen({ onDone }: { onDone: () => void }) {
+export function GeneratingScreen({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -644,13 +614,7 @@ export function OnboardingPage() {
               <div>
                 <label className={labelClass}>기업 규모</label>
                 <div className="flex gap-3">
-                  {(
-                    [
-                      ['LARGE', '대기업'],
-                      ['MID', '중견기업'],
-                      ['STARTUP', '스타트업'],
-                    ] as [CompanySize, string][]
-                  ).map(([val, label]) => (
+                  {COMPANY_SIZES.map(([val, label]) => (
                     <label key={val} className="flex items-center gap-2 cursor-pointer">
                       <input
                         {...step2Form.register('companySize')}

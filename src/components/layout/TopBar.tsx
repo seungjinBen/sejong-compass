@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, ExternalLink, ChevronDown, Menu, LogOut } from 'lucide-react';
+import { Bell, ExternalLink, ChevronDown, Menu, LogOut, UserRound, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore, useUIStore } from '@/store';
 import { getActiveScenario, setActiveScenario, scenarios } from '@/mocks/scenarios';
@@ -23,8 +23,10 @@ interface TopBarProps {
 export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
   const [bellOpen, setBellOpen] = useState(false);
   const [scenarioOpen, setScenarioOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   const scenarioRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const profile = useUserStore(s => s.profile);
@@ -42,6 +44,7 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
     function handleClick(e: MouseEvent) {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
       if (scenarioRef.current && !scenarioRef.current.contains(e.target as Node)) setScenarioOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -128,19 +131,42 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
         )}
 
         {profile && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">
-              <span className="font-medium text-ink">{profile.name}</span>
-              <span className="ml-1 text-xs text-gray-400">{profile.gradeYear}학년 {profile.semester}학기</span>
-            </span>
+          <div className="relative" ref={profileRef}>
             <button
-              onClick={handleLogout}
-              className="p-1.5 text-gray-400 hover:text-ink hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="로그아웃"
-              title="로그아웃"
+              onClick={() => setProfileOpen(v => !v)}
+              className="flex items-center gap-1 text-sm hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors"
             >
-              <LogOut size={15} />
+              <span className="text-gray-500">
+                <span className="font-medium text-ink">{profile.name}</span>
+                <span className="ml-1 text-xs text-gray-400">{profile.gradeYear}학년 {profile.semester}학기</span>
+              </span>
+              <ChevronDown size={12} className="text-gray-400" />
             </button>
+
+            {profileOpen && (
+              <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                <button
+                  onClick={() => { setProfileOpen(false); navigate('/student-info'); }}
+                  className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
+                >
+                  <UserRound size={13} /> 학생 정보 수정
+                </button>
+                <button
+                  onClick={() => { setProfileOpen(false); navigate('/target-edit'); }}
+                  className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
+                >
+                  <Target size={13} /> 희망 직무 변경
+                </button>
+                <div className="border-t border-gray-100">
+                  <button
+                    onClick={() => { setProfileOpen(false); handleLogout(); }}
+                    className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-danger hover:bg-red-50"
+                  >
+                    <LogOut size={13} /> 로그아웃
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
