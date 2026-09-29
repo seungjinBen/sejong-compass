@@ -2,8 +2,10 @@ import type { UserProfile, TargetCondition } from '@/types';
 
 export const defaultProfile: UserProfile = {
   id: 'user-001',
+  studentId: '20211234',
   name: '김세종',
   department: '컴퓨터공학과',
+  minor: '경영학과',
   gradeYear: 3,
   semester: 6,
   jobField: 'BACKEND',
@@ -133,6 +135,7 @@ export const defaultTarget: TargetCondition = {
 
 export const coldStartProfile: UserProfile = {
   id: 'user-002',
+  studentId: '20251234',
   name: '이도전',
   department: '컴퓨터공학과',
   gradeYear: 1,
@@ -159,8 +162,10 @@ export const coldStartProfile: UserProfile = {
 
 export const seniorProfile: UserProfile = {
   id: 'user-003',
+  studentId: '20191234',
   name: '김졸업',
   department: '컴퓨터공학과',
+  doubleMajor: '데이터사이언스학과',
   gradeYear: 4,
   semester: 8,
   jobField: 'BACKEND',

@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
   ChevronDown, ChevronUp, Target, TrendingUp, ExternalLink,
-  Star, SkipForward, Check,
+  SkipForward, Check,
 } from 'lucide-react';
 import { animate } from 'framer-motion';
 import { PageShell } from '@/components/layout/PageShell';
@@ -65,7 +65,6 @@ export function RoadmapPage() {
 
   const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(new Set());
   const [selectedTask, setSelectedTask] = useState<RoadmapTask | null>(null);
-  const [selectedGapSkillId, setSelectedGapSkillId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [loadingTask, setLoadingTask] = useState<string | null>(null);
   const [skipTask, setSkipTask] = useState<{ taskId: string; reason: string } | null>(null);
@@ -200,47 +199,7 @@ export function RoadmapPage() {
       </div>
 
       <div className="flex gap-4 items-start">
-        {/* LEFT: Top gaps panel */}
-        {roadmap.topGaps.length > 0 && (
-          <div className="w-48 shrink-0">
-            <p className="text-xs font-semibold text-gray-600 mb-2 px-1">부족 역량</p>
-            <div className="space-y-1.5">
-              {[...roadmap.topGaps]
-                .sort((a, b) => b.importance - a.importance)
-                .map(gap => (
-                  <button
-                    key={gap.skillId}
-                    onClick={() => {
-                      setSelectedGapSkillId(gap.skillId);
-                      // Find first task containing this skillId
-                      const task = roadmap.semesters
-                        .flatMap(s => s.tasks)
-                        .find(t => t.skillIds.includes(gap.skillId));
-                      if (task) {
-                        setSelectedTask(task);
-                        setPanelOpen(true);
-                      }
-                    }}
-                    className={`w-full text-left p-2.5 rounded-xl border text-xs transition-all ${
-                      selectedGapSkillId === gap.skillId
-                        ? 'border-primary bg-primary-light'
-                        : 'border-gray-100 bg-white hover:border-primary/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-ink">{gap.name}</span>
-                      <span className="text-warn text-[10px]">
-                        {'★'.repeat(gap.importance)}{'☆'.repeat(3 - gap.importance)}
-                      </span>
-                    </div>
-                    <StatusBadge status={gap.status} />
-                  </button>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* RIGHT: Semester timeline */}
+        {/* Semester timeline */}
         <div className="flex-1 min-w-0 overflow-x-auto">
           {/* Predicted score line chart */}
           {lineData.length > 0 && (
@@ -331,9 +290,6 @@ export function RoadmapPage() {
                           const isDone = task.status === 'DONE';
                           const isSkipped = task.status === 'SKIPPED';
                           const isLoading = loadingTask === task.id;
-                          const isHighlighted =
-                            selectedGapSkillId !== null &&
-                            task.skillIds.includes(selectedGapSkillId);
 
                           return (
                             <div
@@ -343,8 +299,6 @@ export function RoadmapPage() {
                                   ? 'bg-green-50 border-green-100'
                                   : isSkipped
                                   ? 'bg-gray-50 border-gray-100 opacity-60'
-                                  : isHighlighted
-                                  ? 'border-primary bg-primary-light/10'
                                   : 'border-gray-100 bg-white hover:border-primary/30'
                               }`}
                               onClick={() => {
@@ -466,7 +420,6 @@ export function RoadmapPage() {
         onClose={() => {
           setPanelOpen(false);
           setSelectedTask(null);
-          setSelectedGapSkillId(null);
         }}
         title={selectedTask?.title ?? '상세'}
         width="w-96"
@@ -477,11 +430,6 @@ export function RoadmapPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <TaskTypeIcon type={selectedTask.type} size="md" showLabel />
               <StatusBadge status={selectedTask.status} />
-              {selectedGapSkillId !== null && (
-                <span className="text-[11px] text-warn flex items-center gap-0.5">
-                  <Star size={10} fill="currentColor" /> 부족 역량
-                </span>
-              )}
               {selectedTask.expectedGain > 0 && (
                 <GainBadge gain={selectedTask.expectedGain} />
               )}

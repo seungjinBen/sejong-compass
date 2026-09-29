@@ -1,36 +1,41 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Upload, Github, Plus, X, Compass,
-  Check, Trash2, Edit2, FileSpreadsheet, Sparkles,
+  Check, Trash2, Edit2, FileSpreadsheet, Sparkles, SkipForward,
 } from 'lucide-react';
 import { useUserStore, useRoadmapStore, useUIStore } from '@/store';
 import {
   saveProfile, saveTarget, parseTranscript, parseGithub,
-  generateRoadmap, getGapAnalysis,
+  generateRoadmap, getGapAnalysis, checkStudentIdAvailable,
 } from '@/api';
 import { EvidenceTooltip } from '@/components/common/EvidenceTooltip';
 import type { JobField, CompanySize, ParsedCourse, Skill } from '@/types';
 
 // ---- Schemas ----
 const step1Schema = z.object({
+  studentId: z
+    .string()
+    .regex(/^\d{8}$/, '학번은 8자리 숫자입니다')
+    .refine(async (v) => checkStudentIdAvailable(v), { message: '이미 등록된 학번입니다' }),
   name: z.string().min(1),
   department: z.string().min(1),
+  doubleMajor: z.string().optional(),
+  minor: z.string().optional(),
   gradeYear: z.coerce.number().min(1).max(4),
   semester: z.coerce.number().min(1).max(8),
-  jobField: z.enum(['BACKEND', 'FRONTEND', 'DATA', 'AI', 'CLOUD', 'SECURITY'] as const),
   gpa: z.coerce.number().min(0).max(4.5),
+});
+
+const step2Schema = z.object({
   languageName: z.string().optional(),
   languageScore: z.coerce.number().optional(),
   codingPlatform: z.string().optional(),
   codingTier: z.string().optional(),
   githubUrl: z.string().optional(),
-});
-
-const step2Schema = z.object({
   certifications: z.array(z.string()),
   awards: z.array(z.string()),
   internships: z.array(z.string()),
@@ -42,6 +47,7 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
+  jobField: z.enum(['BACKEND', 'FRONTEND', 'DATA', 'AI', 'CLOUD', 'SECURITY'] as const),
   companySize: z.enum(['LARGE', 'MID', 'STARTUP'] as const),
   targetSalary: z.number(),
   regions: z.array(z.string()).min(1),
@@ -328,6 +334,8 @@ function GeneratingScreen({ onDone }: { onDone: () => void }) {
 // ---- Main component ----
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefillStudentId = (location.state as { studentId?: string } | null)?.studentId ?? '';
   const profile = useUserStore((s) => s.profile);
   const setProfile = useUserStore((s) => s.setProfile);
   const setTarget = useUserStore((s) => s.setTarget);
@@ -353,9 +361,9 @@ export function OnboardingPage() {
   const step1 = useForm<Step1Form>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
+      studentId: prefillStudentId,
       gradeYear: 3,
       semester: 6,
-      jobField: 'BACKEND',
       gpa: 0,
     },
   });
@@ -382,6 +390,7 @@ export function OnboardingPage() {
   const step3Form = useForm<Step3Form>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
+      jobField: 'BACKEND',
       companySize: 'LARGE',
       targetSalary: 5000,
       regions: ['서울'],
@@ -432,7 +441,7 @@ export function OnboardingPage() {
   }
 
   async function handleGithubParse() {
-    const url = step1.getValues('githubUrl');
+    const url = step2Form.getValues('githubUrl');
     if (!url) return;
     setGithubLoading(true);
     try {
@@ -457,43 +466,53 @@ export function OnboardingPage() {
     setCurrentStep(3);
   }
 
+  function handleSkipStep2() {
+    setStep2Data(step2Form.getValues());
+    setCurrentStep(3);
+  }
+
   async function onStep3Submit(data: Step3Form) {
     if (!step1Data || !step2Data) return;
     setGenerating(true);
 
     const allSkills = [...confirmedSkills, ...githubSkills];
     const profileData = {
-      id: 'user-001',
+      id: `user-${step1Data.studentId}`,
+      studentId: step1Data.studentId,
       name: step1Data.name,
       department: step1Data.department,
+      doubleMajor: step1Data.doubleMajor || undefined,
+      minor: step1Data.minor || undefined,
       gradeYear: step1Data.gradeYear as 1 | 2 | 3 | 4,
       semester: step1Data.semester,
-      jobField: step1Data.jobField,
+      jobField: data.jobField,
       gpa: step1Data.gpa,
       language:
-        step1Data.languageName && step1Data.languageScore
-          ? { name: step1Data.languageName, score: step1Data.languageScore }
+        step2Data.languageName && step2Data.languageScore
+          ? { name: step2Data.languageName, score: step2Data.languageScore }
           : null,
       certifications: step2Data.certifications,
       awards: step2Data.awards,
       internships: step2Data.internships,
       projects: step2Data.projects,
       codingTest:
-        step1Data.codingPlatform && step1Data.codingTier
-          ? { platform: step1Data.codingPlatform, tier: step1Data.codingTier }
+        step2Data.codingPlatform && step2Data.codingTier
+          ? { platform: step2Data.codingPlatform, tier: step2Data.codingTier }
           : null,
-      githubUrl: step1Data.githubUrl,
+      githubUrl: step2Data.githubUrl,
       skills: allSkills,
       onboardingCompleted: true,
     };
 
+    const { jobField: _jobField, ...targetData } = data;
+
     await saveProfile(profileData);
-    await saveTarget({ ...data });
+    await saveTarget(targetData);
 
     const [roadmap, gap] = await Promise.all([generateRoadmap(), getGapAnalysis()]);
 
     setProfile(profileData);
-    setTarget(data);
+    setTarget(targetData);
     setRoadmap(roadmap);
     setBaseMatchRate(gap.matchRate);
   }
@@ -504,7 +523,7 @@ export function OnboardingPage() {
 
   if (generating) return <GeneratingScreen onDone={handleGeneratingDone} />;
 
-  const STEPS = ['기본 정보', '경험 입력', '목표 설정'];
+  const STEPS = ['학생 정보', '개인 스펙', '목표 설정'];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -566,7 +585,7 @@ export function OnboardingPage() {
           {currentStep === 1 && (
             <form onSubmit={step1.handleSubmit(onStep1Next)} className="space-y-4">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="text-base font-semibold text-ink">기본 정보</h2>
+                <h2 className="text-base font-semibold text-ink">학생 정보</h2>
                 <button
                   type="button"
                   onClick={() => void handleTranscriptUpload()}
@@ -606,6 +625,19 @@ export function OnboardingPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className={labelClass}>학번 *</label>
+                  <input
+                    {...step1.register('studentId')}
+                    inputMode="numeric"
+                    maxLength={8}
+                    className={inputClass}
+                    placeholder="20211234"
+                  />
+                  {step1.formState.errors.studentId && (
+                    <p className={errClass}>{step1.formState.errors.studentId.message}</p>
+                  )}
+                </div>
+                <div>
                   <label className={labelClass}>이름 *</label>
                   <input
                     {...step1.register('name')}
@@ -616,6 +648,9 @@ export function OnboardingPage() {
                     <p className={errClass}>이름을 입력하세요</p>
                   )}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>학과 *</label>
                   <select {...step1.register('department')} className={inputClass}>
@@ -630,76 +665,102 @@ export function OnboardingPage() {
                     <p className={errClass}>학과를 선택하세요</p>
                   )}
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>학년</label>
+                    <select {...step1.register('gradeYear')} className={inputClass}>
+                      {[1, 2, 3, 4].map((y) => (
+                        <option key={y} value={y}>
+                          {y}학년
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>학기</label>
+                    <select {...step1.register('semester')} className={inputClass}>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                        <option key={s} value={s}>
+                          {s}학기
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelClass}>학년</label>
-                  <select {...step1.register('gradeYear')} className={inputClass}>
-                    {[1, 2, 3, 4].map((y) => (
-                      <option key={y} value={y}>
-                        {y}학년
-                      </option>
-                    ))}
-                  </select>
+                  <label className={labelClass}>복수전공</label>
+                  <input
+                    {...step1.register('doubleMajor')}
+                    className={inputClass}
+                    placeholder="선택 사항"
+                  />
                 </div>
                 <div>
-                  <label className={labelClass}>학기</label>
-                  <select {...step1.register('semester')} className={inputClass}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                      <option key={s} value={s}>
-                        {s}학기
-                      </option>
-                    ))}
-                  </select>
+                  <label className={labelClass}>부전공</label>
+                  <input
+                    {...step1.register('minor')}
+                    className={inputClass}
+                    placeholder="선택 사항"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className={labelClass}>희망 직무 *</label>
-                <div className="flex flex-wrap gap-2">
-                  <Controller
-                    control={step1.control}
-                    name="jobField"
-                    render={({ field }) => (
-                      <>
-                        {JOB_FIELDS.map(({ value, label }) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => field.onChange(value)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                              field.value === value
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  />
+                <label className={labelClass}>GPA *</label>
+                <input
+                  {...step1.register('gpa')}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="4.5"
+                  className={inputClass}
+                  placeholder="3.85"
+                />
+                {step1.formState.errors.gpa && (
+                  <p className={errClass}>GPA를 입력하세요</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-primary text-white rounded-xl py-3 text-sm font-semibold hover:bg-primary-dark transition-colors"
+              >
+                다음 단계 →
+              </button>
+            </form>
+          )}
+
+          {/* ===== STEP 2 ===== */}
+          {currentStep === 2 && (
+            <form onSubmit={step2Form.handleSubmit(onStep2Next)} className="space-y-4">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-base font-semibold text-ink">개인 스펙</h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSkipStep2}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-ink"
+                  >
+                    <SkipForward size={12} /> 건너뛰기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="text-xs text-gray-500 hover:text-ink"
+                  >
+                    ← 이전
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className={labelClass}>GPA *</label>
-                  <input
-                    {...step1.register('gpa')}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="4.5"
-                    className={inputClass}
-                    placeholder="3.85"
-                  />
-                  {step1.formState.errors.gpa && (
-                    <p className={errClass}>GPA를 입력하세요</p>
-                  )}
-                </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>어학시험</label>
                   <input
-                    {...step1.register('languageName')}
+                    {...step2Form.register('languageName')}
                     className={inputClass}
                     placeholder="TOEIC"
                   />
@@ -707,7 +768,7 @@ export function OnboardingPage() {
                 <div>
                   <label className={labelClass}>점수</label>
                   <input
-                    {...step1.register('languageScore')}
+                    {...step2Form.register('languageScore')}
                     type="number"
                     className={inputClass}
                     placeholder="870"
@@ -719,7 +780,7 @@ export function OnboardingPage() {
                 <div>
                   <label className={labelClass}>코딩테스트 플랫폼</label>
                   <input
-                    {...step1.register('codingPlatform')}
+                    {...step2Form.register('codingPlatform')}
                     className={inputClass}
                     placeholder="백준"
                   />
@@ -727,7 +788,7 @@ export function OnboardingPage() {
                 <div>
                   <label className={labelClass}>티어</label>
                   <input
-                    {...step1.register('codingTier')}
+                    {...step2Form.register('codingTier')}
                     className={inputClass}
                     placeholder="Gold I"
                   />
@@ -743,7 +804,7 @@ export function OnboardingPage() {
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                     <input
-                      {...step1.register('githubUrl')}
+                      {...step2Form.register('githubUrl')}
                       className={inputClass + ' pl-8'}
                       placeholder="https://github.com/username"
                     />
@@ -768,29 +829,6 @@ export function OnboardingPage() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-primary text-white rounded-xl py-3 text-sm font-semibold hover:bg-primary-dark transition-colors"
-              >
-                다음 단계 →
-              </button>
-            </form>
-          )}
-
-          {/* ===== STEP 2 ===== */}
-          {currentStep === 2 && (
-            <form onSubmit={step2Form.handleSubmit(onStep2Next)} className="space-y-4">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-base font-semibold text-ink">경험 입력</h2>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className="text-xs text-gray-500 hover:text-ink"
-                >
-                  ← 이전
-                </button>
               </div>
 
               <div>
@@ -920,6 +958,34 @@ export function OnboardingPage() {
               </div>
 
               <LiveMatchPreview watchedFields={watchedStep3} />
+
+              <div>
+                <label className={labelClass}>희망 직무 *</label>
+                <div className="flex flex-wrap gap-2">
+                  <Controller
+                    control={step3Form.control}
+                    name="jobField"
+                    render={({ field }) => (
+                      <>
+                        {JOB_FIELDS.map(({ value, label }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => field.onChange(value)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                              field.value === value
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className={labelClass}>기업 규모</label>

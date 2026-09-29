@@ -5,6 +5,7 @@ import { getProfile, getTarget, getOpportunities, getGapAnalysis, getRoadmap } f
 import { getActiveScenario } from '@/mocks/scenarios';
 import type { GapAxis } from '@/types';
 
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const DiagnosisPage = lazy(() => import('@/pages/DiagnosisPage').then(m => ({ default: m.DiagnosisPage })));
@@ -26,7 +27,7 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
   const profile = useUserStore(s => s.profile);
   const location = useLocation();
 
-  if (!profile) return <Navigate to="/onboarding" state={{ from: location }} replace />;
+  if (!profile) return <Navigate to="/login" state={{ from: location }} replace />;
   if (!profile.onboardingCompleted) return <Navigate to="/onboarding" replace />;
   if (getActiveScenario() === 'coldStart' && location.pathname !== '/explore') {
     return <Navigate to="/explore" replace />;
@@ -40,6 +41,7 @@ export function AppRoutes() {
   const setOpportunities = useUIStore(s => s.setOpportunities);
   const setRoadmap = useRoadmapStore(s => s.setRoadmap);
   const setBaseMatchRate = useRoadmapStore(s => s.setBaseMatchRate);
+  const setQualitativeInsights = useRoadmapStore(s => s.setQualitativeInsights);
   const [loading, setLoading] = useState(true);
   const [gapAxes, setGapAxes] = useState<GapAxis[]>([]);
 
@@ -56,10 +58,11 @@ export function AppRoutes() {
       setOpportunities(opps);
       setBaseMatchRate(gap.matchRate);
       setGapAxes(gap.axes);
+      setQualitativeInsights(gap.qualitativeInsights);
       setRoadmap(roadmap);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [setProfile, setTarget, setOpportunities, setBaseMatchRate, setRoadmap]);
+  }, [setProfile, setTarget, setOpportunities, setBaseMatchRate, setQualitativeInsights, setRoadmap]);
 
   // Store gapAxes in a global ref accessible via window for compatibility
   useEffect(() => {
@@ -80,13 +83,14 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/dashboard" element={<RequireOnboarding><DashboardPage /></RequireOnboarding>} />
         <Route path="/diagnosis" element={<RequireOnboarding><DiagnosisPage /></RequireOnboarding>} />
         <Route path="/roadmap" element={<RequireOnboarding><RoadmapPage /></RequireOnboarding>} />
         <Route path="/dodream" element={<RequireOnboarding><DoDreamPage /></RequireOnboarding>} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Suspense>
   );

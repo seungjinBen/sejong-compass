@@ -1,13 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Roadmap, TaskStatus, DoDreamProgram } from '@/types';
+import type { Roadmap, TaskStatus, DoDreamProgram, QualitativeInsight } from '@/types';
 import { applyTaskStatusChange } from '@/lib/score';
 
 interface RoadmapState {
   roadmap: Roadmap | null;
   baseMatchRate: number;
+  qualitativeInsights: QualitativeInsight[];
   setRoadmap: (r: Roadmap) => void;
   setBaseMatchRate: (rate: number) => void;
+  setQualitativeInsights: (insights: QualitativeInsight[]) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   addDoDreamTask: (program: DoDreamProgram, targetSemester?: string) => void;
   dodreamAddedIds: Set<string>;
@@ -19,11 +21,14 @@ export const useRoadmapStore = create<RoadmapState>()(
     (set, get) => ({
       roadmap: null,
       baseMatchRate: 84,
+      qualitativeInsights: [],
       dodreamAddedIds: new Set<string>(),
 
       setRoadmap: (roadmap) => set({ roadmap }),
 
       setBaseMatchRate: (rate) => set({ baseMatchRate: rate }),
+
+      setQualitativeInsights: (insights) => set({ qualitativeInsights: insights }),
 
       updateTaskStatus: (taskId, status) => {
         const { roadmap, baseMatchRate } = get();

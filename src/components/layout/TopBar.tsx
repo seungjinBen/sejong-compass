@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, ExternalLink, ChevronDown, Menu } from 'lucide-react';
+import { Bell, ExternalLink, ChevronDown, Menu, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore, useUIStore } from '@/store';
 import { getActiveScenario, setActiveScenario, scenarios } from '@/mocks/scenarios';
@@ -28,7 +28,13 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
   const navigate = useNavigate();
 
   const profile = useUserStore(s => s.profile);
+  const logout = useUserStore(s => s.logout);
   const { opportunities, readOppIds, markOppRead } = useUIStore();
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
   const unread = opportunities.filter(o => !readOppIds.has(o.id) && !o.read).length;
   const currentScenario = getActiveScenario();
 
@@ -122,10 +128,20 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
         )}
 
         {profile && (
-          <span className="text-sm text-gray-500">
-            <span className="font-medium text-ink">{profile.name}</span>
-            <span className="ml-1 text-xs text-gray-400">{profile.gradeYear}학년 {profile.semester}학기</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">
+              <span className="font-medium text-ink">{profile.name}</span>
+              <span className="ml-1 text-xs text-gray-400">{profile.gradeYear}학년 {profile.semester}학기</span>
+            </span>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-gray-400 hover:text-ink hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="로그아웃"
+              title="로그아웃"
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
         )}
 
         {/* Bell */}

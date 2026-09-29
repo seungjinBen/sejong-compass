@@ -1,6 +1,10 @@
-import type { UserProfile, TargetCondition, GapAxis, Roadmap, DoDreamProgram, Opportunity } from '@/types';
+import type { UserProfile, TargetCondition, GapAxis, Roadmap, DoDreamProgram, Opportunity, QualitativeInsight } from '@/types';
 import { defaultProfile, defaultTarget, coldStartProfile, seniorProfile, seniorTarget } from '@/mocks/data/profile';
-import { defaultGapAxes, defaultMatchRate, defaultTargetMatchRate, seniorGapAxes, seniorMatchRate, seniorTargetMatchRate } from '@/mocks/data/gap';
+import {
+  defaultGapAxes, defaultMatchRate, defaultTargetMatchRate,
+  seniorGapAxes, seniorMatchRate, seniorTargetMatchRate,
+  defaultQualitativeInsights, seniorQualitativeInsights,
+} from '@/mocks/data/gap';
 import { defaultRoadmap, seniorRoadmap } from '@/mocks/data/roadmap';
 import { defaultDoDreamPrograms } from '@/mocks/data/dodream';
 import { defaultOpportunities } from '@/mocks/data/opportunities';
@@ -15,6 +19,7 @@ export interface Scenario {
   matchRate: number;
   targetMatchRate: number;
   gapAxes: GapAxis[];
+  qualitativeInsights: QualitativeInsight[];
   roadmap: Roadmap;
   dodreamPrograms: DoDreamProgram[];
   opportunities: Opportunity[];
@@ -29,6 +34,7 @@ export const scenarios: Record<ScenarioId, Scenario> = {
     matchRate: defaultMatchRate,
     targetMatchRate: defaultTargetMatchRate,
     gapAxes: defaultGapAxes,
+    qualitativeInsights: defaultQualitativeInsights,
     roadmap: defaultRoadmap,
     dodreamPrograms: defaultDoDreamPrograms,
     opportunities: defaultOpportunities,
@@ -41,6 +47,7 @@ export const scenarios: Record<ScenarioId, Scenario> = {
     matchRate: 0,
     targetMatchRate: 70,
     gapAxes: [],
+    qualitativeInsights: [],
     roadmap: {
       targetLabel: '직무 미설정',
       currentMatchRate: 0,
@@ -61,6 +68,7 @@ export const scenarios: Record<ScenarioId, Scenario> = {
     matchRate: seniorMatchRate,
     targetMatchRate: seniorTargetMatchRate,
     gapAxes: seniorGapAxes,
+    qualitativeInsights: seniorQualitativeInsights,
     roadmap: seniorRoadmap,
     dodreamPrograms: defaultDoDreamPrograms,
     opportunities: defaultOpportunities,

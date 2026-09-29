@@ -21,8 +21,11 @@ export interface Skill {
 
 export interface UserProfile {
   id: string;
+  studentId: string;
   name: string;
   department: string;
+  doubleMajor?: string;
+  minor?: string;
   gradeYear: 1 | 2 | 3 | 4;
   semester: number;
   jobField: JobField;
@@ -186,4 +189,9 @@ export interface ParsedCourse {
 export interface ScenarioType {
   id: 'default' | 'coldStart' | 'senior';
   label: string;
+}
+
+export interface QualitativeInsight {
+  label: string;
+  comment: string;
 }

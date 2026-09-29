@@ -21,7 +21,7 @@ import { useUserStore, useRoadmapStore, useUIStore } from '@/store';
 import { updateTaskStatus as apiUpdateTaskStatus, logBehavior } from '@/api';
 import { startRealtimeSimulation } from '@/mocks/realtime';
 import { getActiveScenario } from '@/mocks/scenarios';
-import { selectUpcomingTasks } from '@/store/selectors';
+import { selectUpcomingTasks, selectCompletedSemesterTasks } from '@/store/selectors';
 import type { GapAxis, TaskStatus } from '@/types';
 
 // Animated number hook (framer-motion)
@@ -41,6 +41,10 @@ function useAnimatedNumber(target: number, duration = 600) {
   }, [target, duration]);
 
   return current;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 }
 
 // D-day badge
@@ -64,7 +68,10 @@ export function DashboardPage() {
   const roadmap = useRoadmapStore((s) => s.roadmap);
   const updateTask = useRoadmapStore((s) => s.updateTaskStatus);
   const setRoadmap = useRoadmapStore((s) => s.setRoadmap);
+  const qualitativeInsights = useRoadmapStore((s) => s.qualitativeInsights);
   const { opportunities, addOpportunity, updateDoDreamCapacity, showToast } = useUIStore();
+
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
   // gapAxes are stored on window by routes.tsx
   const [gapAxes, setGapAxes] = useState<GapAxis[]>(() => {
@@ -89,13 +96,21 @@ export function DashboardPage() {
   const animatedRate = useAnimatedNumber(matchRate, 600);
   const isSenior = getActiveScenario() === 'senior';
 
-  // Get top 3 upcoming tasks from current semester
+  // Get top 3 upcoming tasks from current semester, plus completed ones (shown struck-through)
   const upcomingTasks = roadmap ? selectUpcomingTasks(roadmap, 3) : [];
+  const completedTasks = roadmap ? selectCompletedSemesterTasks(roadmap) : [];
 
   // Biggest gap: sort ascending by deltaPercent (most negative = biggest gap)
   const biggestGap = gapAxes.length > 0
     ? [...gapAxes].sort((a, b) => a.deltaPercent - b.deltaPercent)[0]
     : null;
+
+  // Track most recent opportunity update time
+  useEffect(() => {
+    if (opportunities.length === 0) return;
+    const latest = opportunities.reduce((max, o) => (o.createdAt > max ? o.createdAt : max), '');
+    setLastUpdatedAt(latest);
+  }, [opportunities]);
 
   // Realtime simulation
   useEffect(() => {
@@ -248,7 +263,7 @@ export function DashboardPage() {
                 <Target size={14} className="text-gray-400" />
                 <span className="text-xs text-gray-500">
                   {target
-                    ? `${target.targetCompany} ${target.targetRole}`
+                    ? `${target.targetCompany} - ${target.targetRole}`
                     : '목표 미설정'}
                 </span>
               </div>
@@ -285,6 +300,18 @@ export function DashboardPage() {
               <strong className="text-ink">{roadmap?.progressPercent ?? 0}%</strong>
             </span>
           </div>
+
+          {qualitativeInsights.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+              {qualitativeInsights.map((insight) => (
+                <p key={insight.label} className="text-[11px] text-gray-500 leading-relaxed">
+                  <span className="font-semibold text-gray-600">{insight.label}</span>
+                  {' — '}
+                  {insight.comment}
+                </p>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Radar */}
@@ -429,11 +456,34 @@ export function DashboardPage() {
               })}
             </div>
           )}
+
+          {completedTasks.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-400 mb-2">완료한 작업</p>
+              <div className="space-y-1.5">
+                {completedTasks.map((task) => (
+                  <div key={task.id} className="flex items-center gap-2 px-1">
+                    <TaskTypeIcon type={task.type} size="sm" />
+                    <p className="text-xs text-gray-400 line-through flex-1 truncate">
+                      {task.title}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Opportunities */}
         <Card>
-          <CardHeader>실시간 기회 알림</CardHeader>
+          <div className="flex items-center justify-between mb-1">
+            <CardHeader className="mb-0">실시간 기회 알림</CardHeader>
+            {lastUpdatedAt && (
+              <span className="text-[11px] text-gray-400">
+                마지막 업데이트 {formatTime(lastUpdatedAt)}
+              </span>
+            )}
+          </div>
           {opportunities.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">새로운 알림이 없습니다</p>
           ) : (

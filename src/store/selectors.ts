@@ -18,3 +18,8 @@ export function selectUpcomingTasks(roadmap: Roadmap, count = 3) {
   const notDone = current.filter(t => t.status !== 'DONE' && t.status !== 'SKIPPED');
   return notDone.slice(0, count);
 }
+
+export function selectCompletedSemesterTasks(roadmap: Roadmap, count = 5) {
+  const current = selectCurrentSemesterTasks(roadmap);
+  return current.filter(t => t.status === 'DONE').slice(0, count);
+}

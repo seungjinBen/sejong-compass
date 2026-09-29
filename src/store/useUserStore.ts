@@ -9,6 +9,7 @@ interface UserState {
   updateProfile: (p: Partial<UserProfile>) => void;
   setTarget: (t: TargetCondition) => void;
   logBehavior: (e: BehaviorEvent) => void;
+  logout: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -32,6 +33,12 @@ export const useUserStore = create<UserState>()(
         const events: BehaviorEvent[] = raw ? (JSON.parse(raw) as BehaviorEvent[]) : [];
         events.push(e);
         localStorage.setItem('sc:behavior', JSON.stringify(events));
+      },
+
+      logout: () => {
+        localStorage.removeItem('sc:profile');
+        localStorage.removeItem('sc:target');
+        set({ profile: null, target: null });
       },
     }),
     {

@@ -1,4 +1,4 @@
-import type { GapAxis } from '@/types';
+import type { GapAxis, QualitativeInsight } from '@/types';
 
 export const defaultMatchRate = 84;
 export const defaultTargetMatchRate = 92;
@@ -86,3 +86,17 @@ export const seniorGapAxes: GapAxis[] = defaultGapAxes.map(ax => ({
   status: ax.status === 'LACK' ? 'PARTIAL' : ('MET' as const),
   deltaPercent: ax.deltaPercent < 0 ? -1 : 0,
 }));
+
+export const defaultQualitativeInsights: QualitativeInsight[] = [
+  { label: '리더십', comment: '캡스톤 팀 프로젝트에서 백엔드 파트를 주도한 경험이 있어요.' },
+  { label: '커뮤니케이션', comment: '오픈소스 PR 리뷰 이력으로 협업 커뮤니케이션 역량이 드러나요.' },
+  { label: '문제해결력', comment: '알고리즘 티어 대비 실전 프로젝트 적용 경험이 아직 적은 편이에요.' },
+  { label: '팀워크/협업', comment: '2인 이상 팀 프로젝트 2건을 완주한 협업 경험이 있어요.' },
+];
+
+export const seniorQualitativeInsights: QualitativeInsight[] = [
+  { label: '리더십', comment: '인턴십에서 소규모 기능 단위를 단독으로 책임진 경험이 강점이에요.' },
+  { label: '커뮤니케이션', comment: 'MSA 프로젝트 협업 경험으로 타 파트와의 소통 역량이 검증됐어요.' },
+  { label: '문제해결력', comment: '대규모 트래픽 처리 프로젝트로 실전 문제 해결 경험이 풍부해요.' },
+  { label: '팀워크/협업', comment: '인턴십·팀 프로젝트 모두에서 협업 이력이 꾸준히 확인돼요.' },
+];

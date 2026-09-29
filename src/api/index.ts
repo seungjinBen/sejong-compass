@@ -1,7 +1,7 @@
 import type {
   UserProfile, TargetCondition, GapAxis, JobPosting,
   Roadmap, TaskStatus, DoDreamProgram, Opportunity,
-  BehaviorEvent, Skill, ParsedCourse,
+  BehaviorEvent, Skill, ParsedCourse, QualitativeInsight,
 } from '@/types';
 import { getActiveScenario, scenarios } from '@/mocks/scenarios';
 
@@ -13,7 +13,23 @@ const STORAGE_KEYS = {
   TASK_STATUS: 'sc:task_status',
   DODREAM_ADDED: 'sc:dodream_added',
   BEHAVIOR: 'sc:behavior',
+  STUDENT_INDEX: 'sc:profiles_by_student_id',
 } as const;
+
+interface StudentIndexEntry {
+  profile: UserProfile;
+  target: TargetCondition | null;
+}
+
+function getStudentIndex(): Record<string, StudentIndexEntry> {
+  const raw = localStorage.getItem(STORAGE_KEYS.STUDENT_INDEX);
+  if (!raw) return {};
+  return JSON.parse(raw) as Record<string, StudentIndexEntry>;
+}
+
+function saveStudentIndex(index: Record<string, StudentIndexEntry>): void {
+  localStorage.setItem(STORAGE_KEYS.STUDENT_INDEX, JSON.stringify(index));
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,7 +116,36 @@ export async function saveProfile(p: Partial<UserProfile>): Promise<UserProfile>
   const existing = getScenarioData().profile;
   const merged = { ...existing, ...p };
   localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(merged));
+
+  if (merged.studentId) {
+    const index = getStudentIndex();
+    const prevTarget = index[merged.studentId]?.target ?? null;
+    index[merged.studentId] = { profile: merged, target: prevTarget };
+    saveStudentIndex(index);
+  }
+
   return merged;
+}
+
+// ---------- Student ID lookup (login / duplicate check) ----------
+
+export async function checkStudentIdAvailable(studentId: string): Promise<boolean> {
+  await randomDelay();
+  const index = getStudentIndex();
+  return !(studentId in index);
+}
+
+export async function loginWithStudentId(
+  studentId: string,
+): Promise<{ profile: UserProfile; target: TargetCondition | null } | null> {
+  await randomDelay();
+  mayFail();
+  const index = getStudentIndex();
+  const entry = index[studentId];
+  if (!entry) return null;
+  localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(entry.profile));
+  if (entry.target) localStorage.setItem(STORAGE_KEYS.TARGET, JSON.stringify(entry.target));
+  return entry;
 }
 
 export async function getMockProfileForImport(): Promise<UserProfile> {
@@ -152,15 +197,36 @@ export async function saveTarget(t: TargetCondition): Promise<void> {
   await randomDelay();
   mayFail();
   localStorage.setItem(STORAGE_KEYS.TARGET, JSON.stringify(t));
+
+  const rawProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
+  const activeProfile = rawProfile ? (JSON.parse(rawProfile) as UserProfile) : null;
+  if (activeProfile?.studentId) {
+    const index = getStudentIndex();
+    const entry = index[activeProfile.studentId];
+    if (entry) {
+      index[activeProfile.studentId] = { ...entry, target: t };
+      saveStudentIndex(index);
+    }
+  }
 }
 
 // ---------- Gap Analysis ----------
 
-export async function getGapAnalysis(): Promise<{ matchRate: number; targetMatchRate: number; axes: GapAxis[] }> {
+export async function getGapAnalysis(): Promise<{
+  matchRate: number;
+  targetMatchRate: number;
+  axes: GapAxis[];
+  qualitativeInsights: QualitativeInsight[];
+}> {
   await randomDelay();
   mayFail();
   const d = getScenarioData();
-  return { matchRate: d.matchRate, targetMatchRate: d.targetMatchRate, axes: d.gapAxes };
+  return {
+    matchRate: d.matchRate,
+    targetMatchRate: d.targetMatchRate,
+    axes: d.gapAxes,
+    qualitativeInsights: d.qualitativeInsights,
+  };
 }
 
 // ---------- Jobs ----------
