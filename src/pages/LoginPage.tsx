@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Compass, LogIn, UserPlus } from 'lucide-react';
+import { Compass, LogIn, Mail, Lock } from 'lucide-react';
 import { useUserStore } from '@/store';
-import { loginWithStudentId } from '@/api';
+import { login } from '@/api/auth';
+import { loadSessionFor } from '@/api/session';
+import { errorMessage, isApiError } from '@/api/http';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -11,39 +13,54 @@ export function LoginPage() {
   const setProfile = useUserStore((s) => s.setProfile);
   const setTarget = useUserStore((s) => s.setTarget);
 
-  const [studentId, setStudentId] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Already signed in (persisted session) — skip the login screen
-  if (profile?.onboardingCompleted) return <Navigate to="/dashboard" replace />;
+  // Already signed in (server session restored)
+  if (profile) return <Navigate to={profile.onboardingCompleted ? '/dashboard' : '/onboarding'} replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotFound(false);
 
-    if (!/^\d{8}$/.test(studentId)) {
-      setError('학번은 8자리 숫자로 입력해주세요');
+    const schoolEmail = email.trim().toLowerCase();
+    if (!/^[^@\s]+@(sju\.ac\.kr|sejong\.co\.kr)$/.test(schoolEmail)) {
+      setError('학교 이메일(@sju.ac.kr 또는 @sejong.co.kr)을 입력해주세요');
+      return;
+    }
+    if (password.length < 10) {
+      setError('비밀번호는 10자 이상입니다');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await loginWithStudentId(studentId);
-      if (result) {
-        setProfile(result.profile);
-        if (result.target) setTarget(result.target);
-        const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-        navigate(from ?? '/dashboard', { replace: true });
+      const me = await login({ schoolEmail, password });
+      const session = await loadSessionFor(me);
+      setProfile(session.profile);
+      setTarget(session.target);
+
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+      if (!session.profile.onboardingCompleted) {
+        navigate('/onboarding', { replace: true });
       } else {
-        setNotFound(true);
+        navigate(from ?? '/dashboard', { replace: true });
+      }
+    } catch (err) {
+      if (isApiError(err, 'INVALID_CREDENTIALS')) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다');
+      } else {
+        setError(errorMessage(err, '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'));
       }
     } finally {
       setLoading(false);
     }
   }
+
+  const inputClass =
+    'w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:border-primary transition-colors bg-white';
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -59,23 +76,35 @@ export function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-ink mb-4">학번으로 로그인</h2>
+          <h1 className="text-base font-semibold text-ink mb-1">로그인</h1>
+          <p className="text-xs text-gray-500 mb-5">학교 이메일로 로그인하세요</p>
+
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">학번</label>
+            <div className="relative">
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
-                value={studentId}
-                onChange={(e) => {
-                  setStudentId(e.target.value.replace(/\D/g, '').slice(0, 8));
-                  setNotFound(false);
-                  setError(null);
-                }}
-                inputMode="numeric"
-                placeholder="20211234"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors bg-white"
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+                placeholder="student@sju.ac.kr"
+                autoFocus
               />
-              {error && <p className="text-xs text-danger mt-0.5">{error}</p>}
             </div>
+            <div className="relative">
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+                placeholder="비밀번호"
+              />
+            </div>
+
+            {error && <p className="text-xs text-danger">{error}</p>}
 
             <button
               type="submit"
@@ -83,23 +112,13 @@ export function LoginPage() {
               className="w-full flex items-center justify-center gap-1.5 bg-primary text-white rounded-xl py-3 text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               <LogIn size={15} />
-              {loading ? '확인 중...' : '로그인'}
+              {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
-          {notFound && (
-            <div className="mt-4 bg-primary-light border border-primary/20 rounded-xl p-4 text-center">
-              <p className="text-xs text-gray-600 mb-3">
-                등록된 학번이 없습니다. 처음이시네요! 프로필을 먼저 등록해주세요.
-              </p>
-              <button
-                onClick={() => navigate('/onboarding', { state: { studentId } })}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary rounded-lg px-4 py-2 hover:bg-white transition-colors"
-              >
-                <UserPlus size={13} /> 프로필 등록하기
-              </button>
-            </div>
-          )}
+          <p className="text-[11px] text-gray-400 text-center mt-4">
+            회원가입은 학교 이메일 인증이 필요하며 현재 준비 중입니다.
+          </p>
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
-import type { UserProfile, TargetCondition, GapAxis, Roadmap, DoDreamProgram, Opportunity, QualitativeInsight } from '@/types';
-import { defaultProfile, defaultTarget, coldStartProfile, seniorProfile, seniorTarget } from '@/mocks/data/profile';
+import type { GapAxis, Roadmap, DoDreamProgram, Opportunity, QualitativeInsight } from '@/types';
 import {
   defaultGapAxes, defaultMatchRate, defaultTargetMatchRate,
   seniorGapAxes, seniorMatchRate, seniorTargetMatchRate,
@@ -12,11 +11,13 @@ import { defaultOpportunities } from '@/mocks/data/opportunities';
 
 export type ScenarioId = 'default' | 'coldStart' | 'senior';
 
+/**
+ * 분석 기능(갭·로드맵·두드림·기회) 목업 시나리오.
+ * 프로필·취업목표는 백엔드에서 오므로 시나리오에 포함하지 않는다.
+ */
 export interface Scenario {
   id: ScenarioId;
   label: string;
-  profile: UserProfile;
-  target: TargetCondition | null;
   matchRate: number;
   targetMatchRate: number;
   gapAxes: GapAxis[];
@@ -29,9 +30,7 @@ export interface Scenario {
 export const scenarios: Record<ScenarioId, Scenario> = {
   default: {
     id: 'default',
-    label: '김세종 (기본)',
-    profile: defaultProfile,
-    target: defaultTarget,
+    label: '기본 (3학년)',
     matchRate: defaultMatchRate,
     targetMatchRate: defaultTargetMatchRate,
     gapAxes: defaultGapAxes,
@@ -42,9 +41,7 @@ export const scenarios: Record<ScenarioId, Scenario> = {
   },
   coldStart: {
     id: 'coldStart',
-    label: '이도전 (신입생)',
-    profile: coldStartProfile,
-    target: null,
+    label: '신입생',
     matchRate: coldStartMatchRate,
     targetMatchRate: coldStartTargetMatchRate,
     gapAxes: coldStartGapAxes,
@@ -55,9 +52,7 @@ export const scenarios: Record<ScenarioId, Scenario> = {
   },
   senior: {
     id: 'senior',
-    label: '김졸업 (4학년)',
-    profile: seniorProfile,
-    target: seniorTarget,
+    label: '4학년 (취준)',
     matchRate: seniorMatchRate,
     targetMatchRate: seniorTargetMatchRate,
     gapAxes: seniorGapAxes,

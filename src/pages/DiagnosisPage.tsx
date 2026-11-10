@@ -13,7 +13,8 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Skeleton } from '@/components/common/Skeleton';
 import { useUserStore, useRoadmapStore, useUIStore } from '@/store';
 import { getJobsList, generateRoadmap, logBehavior } from '@/api';
-import type { JobPosting, GapAxis, GapStatus } from '@/types';
+import type { JobPosting, GapAxis, GapStatus, Evidence } from '@/types';
+import { useStudentCodes } from '@/hooks/useCodes';
 
 const SOURCE_LABELS: Record<string, string> = {
   SARAMIN: '사람인', WANTED: '원티드', JOBKOREA: '잡코리아', COMPANY: '공식',
@@ -39,6 +40,7 @@ export function DiagnosisPage() {
   const setRoadmap = useRoadmapStore(s => s.setRoadmap);
   const setBaseMatchRate = useRoadmapStore(s => s.setBaseMatchRate);
   const { showToast } = useUIStore();
+  const techStacks = useStudentCodes('tech-stacks');
 
   // gapAxes from window
   const [gapAxes, setGapAxes] = useState<GapAxis[]>(() => {
@@ -131,8 +133,20 @@ export function DiagnosisPage() {
     }
   }
 
-  // Owned skill IDs from profile
-  const ownedSkillIds = new Set((profile?.skills ?? []).map(s => s.id));
+  // 보유 스킬: 프로젝트 기술 스택 코드 → 이름 → 목업 스킬 ID('skill-java' 형태) 로 근사 매칭
+  const techNameOf = new Map((techStacks.data ?? []).map(c => [c.code, c.name]));
+  const ownedSkillEvidence = new Map<string, Evidence[]>();
+  for (const p of profile?.projects ?? []) {
+    for (const code of p.techStackCodes) {
+      const name = techNameOf.get(code);
+      if (!name) continue;
+      const id = `skill-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      const ev = ownedSkillEvidence.get(id) ?? [];
+      ev.push({ kind: 'PROJECT', label: `${p.name} (${name})`, weight: 0.5 });
+      ownedSkillEvidence.set(id, ev);
+    }
+  }
+  const ownedSkillIds = new Set(ownedSkillEvidence.keys());
 
   return (
     <PageShell title="스펙 진단 & 갭">
@@ -317,9 +331,9 @@ export function DiagnosisPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {selected.requiredSkills.filter(s => s.type === 'REQUIRED').map(skill => {
                         const owned = ownedSkillIds.has(skill.skillId);
-                        const profileSkill = profile?.skills.find(s => s.id === skill.skillId);
-                        return owned && profileSkill ? (
-                          <EvidenceTooltip key={skill.skillId} evidences={profileSkill.evidences}>
+                        const evidences = ownedSkillEvidence.get(skill.skillId);
+                        return owned && evidences ? (
+                          <EvidenceTooltip key={skill.skillId} evidences={evidences}>
                             <span className="text-xs bg-green-100 text-success border border-green-200 px-2.5 py-1 rounded-full font-medium cursor-help flex items-center gap-1">
                               <CheckCircle size={10} />{skill.name}
                             </span>

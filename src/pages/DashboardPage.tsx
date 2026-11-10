@@ -21,6 +21,7 @@ import { useUserStore, useRoadmapStore, useUIStore } from '@/store';
 import { updateTaskStatus as apiUpdateTaskStatus, logBehavior } from '@/api';
 import { startRealtimeSimulation } from '@/mocks/realtime';
 import { getActiveScenario } from '@/mocks/scenarios';
+import { useCodeName } from '@/hooks/useCodes';
 import { selectUpcomingTasks, selectCompletedSemesterTasks } from '@/store/selectors';
 import type { GapAxis, TaskStatus, UserProfile } from '@/types';
 
@@ -49,12 +50,12 @@ function formatTime(iso: string): string {
 
 function computeSpecCompleteness(profile: UserProfile): number {
   const checks = [
-    !!profile.language,
-    profile.certifications.length > 0,
+    profile.gpa != null,
+    profile.certificationCodes.length > 0,
     profile.awards.length > 0,
     profile.internships.length > 0,
     profile.projects.length > 0,
-    !!profile.githubUrl,
+    profile.projects.some((p) => !!p.githubUrl),
   ];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
@@ -84,6 +85,7 @@ export function DashboardPage() {
   const { opportunities, addOpportunity, updateDoDreamCapacity, showToast } = useUIStore();
 
   const specCompleteness = profile ? computeSpecCompleteness(profile) : 0;
+  const jobName = useCodeName('job-categories');
 
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
@@ -243,7 +245,7 @@ export function DashboardPage() {
               지원 시기입니다 — 준비된 이력서로 지원하세요
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              매칭률 {matchRate}% · {target?.targetCompany} {target?.targetRole}
+              매칭률 {matchRate}% · {target?.targetCompany} {jobName(target?.jobCategoryCode)}
             </p>
           </div>
           <div className="flex gap-2">
@@ -302,7 +304,7 @@ export function DashboardPage() {
                 <Target size={14} className="text-gray-400" />
                 <span className="text-xs text-gray-500">
                   {target
-                    ? `${target.targetCompany} - ${target.targetRole}`
+                    ? `${target.targetCompany} - ${jobName(target.jobCategoryCode)}`
                     : '목표 미설정'}
                 </span>
               </div>

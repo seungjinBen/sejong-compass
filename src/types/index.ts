@@ -1,5 +1,5 @@
 export type JobField = 'BACKEND' | 'FRONTEND' | 'DATA' | 'AI' | 'CLOUD' | 'SECURITY';
-export type CompanySize = 'LARGE' | 'MID' | 'STARTUP';
+export type CompanySize = 'LARGE' | 'MID' | 'STARTUP' | 'SMALL';
 export type TaskStatus = 'DONE' | 'IN_PROGRESS' | 'TODO' | 'SKIPPED';
 export type TaskType = 'COURSE' | 'CERT' | 'PROJECT' | 'DODREAM' | 'CODING_TEST' | 'LANGUAGE' | 'INTERN' | 'EVENT';
 export type GapKey = 'GPA' | 'LANGUAGE' | 'CERT' | 'PROJECT' | 'CODING_TEST' | 'STACK';
@@ -19,35 +19,83 @@ export interface Skill {
   evidences: Evidence[];
 }
 
-export interface UserProfile {
-  id: string;
-  studentId: string;
+// ---------- Backend-aligned domain types (Compass API) ----------
+
+export type OnboardingStep =
+  | 'BASIC_INFO' | 'MAJORS' | 'PREFERENCES' | 'COURSES'
+  | 'PROJECTS' | 'INTERNSHIPS' | 'AWARDS' | 'CERTIFICATIONS';
+export type OnboardingStepStatus = 'NOT_STARTED' | 'COMPLETED' | 'SKIPPED';
+
+export interface OnboardingView {
+  steps: { step: OnboardingStep; status: OnboardingStepStatus }[];
+  nextStep: OnboardingStep | null;
+  finished: boolean;
+  totalSteps: number;
+  completedSteps: number;
+  skippedSteps: number;
+}
+
+export interface MajorSelection {
+  majorCode: string;
+  completionTypeCode: string;
+}
+
+export interface ProjectItem {
+  id: number;
   name: string;
-  department: string;
-  doubleMajor?: string;
-  minor?: string;
-  gradeYear: 1 | 2 | 3 | 4;
-  semester: number;
-  jobField: JobField;
-  gpa: number;
-  gpaScale: number;
-  language: { name: string; score: number } | null;
-  certifications: string[];
-  awards: string[];
-  internships: string[];
-  projects: { title: string; stack: string[]; description: string }[];
-  githubUrl?: string;
-  skills: Skill[];
+  overview: string;
+  description: string;
+  outcome?: string | null;
+  githubUrl?: string | null;
+  techStackCodes: string[];
+}
+
+export interface InternshipItem {
+  id: number;
+  companyName: string;
+  jobCategoryCode: string;
+  startedOn: string;
+  endedOn: string;
+  description: string;
+}
+
+export interface AwardItem {
+  id: number;
+  name: string;
+  organizer: string;
+  description?: string | null;
+}
+
+/** 백엔드 Profile + 전공/이력/온보딩 상태를 합친 프론트 세션 프로필 */
+export interface UserProfile {
+  id: number;
+  schoolEmail: string;
+  name: string;
+  isTransfer: boolean;
+  emailVerified: boolean;
+  /** 정규 이수학기 수 (미입력 null) */
+  semester: number | null;
+  gpa: number | null;
+  gpaScale: number | null;
+  majors: MajorSelection[];
+  certificationCodes: string[];
+  projects: ProjectItem[];
+  internships: InternshipItem[];
+  awards: AwardItem[];
+  onboarding: OnboardingView | null;
+  /** BASIC_INFO·MAJORS·PREFERENCES 가 모두 COMPLETED 이면 true */
   onboardingCompleted: boolean;
 }
 
+/** 백엔드 CareerGoal */
 export interface TargetCondition {
-  companySize: CompanySize;
+  jobCategoryCode: string;
+  companySizes: CompanySize[];
+  /** 만원 단위 연봉 */
   targetSalary: number;
-  regions: string[];
-  careerType: 'NEW' | 'EXPERIENCED';
+  regionCodes: string[];
   targetCompany: string;
-  targetRole: string;
+  /** YYYY-MM */
   targetDate: string;
 }
 
@@ -177,13 +225,6 @@ export interface BehaviorEvent {
   type: 'JOB_VIEW' | 'JOB_SAVE' | 'TASK_DONE' | 'TASK_SKIP' | 'DODREAM_ADD' | 'OPP_CLICK' | 'REASON_OPEN';
   targetId: string;
   at: string;
-}
-
-export interface ParsedCourse {
-  name: string;
-  grade: string;
-  semester: string;
-  mappedSkills?: Skill[];
 }
 
 export interface ScenarioType {

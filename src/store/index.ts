@@ -22,7 +22,7 @@ export function useAppStore() {
     profile: user.profile,
     target: user.target,
     setProfile: (p: UserProfile) => user.setProfile(p),
-    setTarget: (t: TargetCondition) => user.setTarget(t),
+    setTarget: (t: TargetCondition | null) => user.setTarget(t),
 
     // Gap
     matchRate: roadmap

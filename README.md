@@ -16,11 +16,13 @@ npx tsc --noEmit   # 타입 검사
 
 TopBar 우측 주황 점(●) 버튼 (DEV 모드 한정)으로 세 가지 시나리오를 즉시 전환할 수 있습니다.
 
-| ID | 설명 | 상태 |
-|----|------|------|
-| `default` | 김세종 · 3학년 6학기 · 매칭률 84% | 온보딩 완료 |
-| `coldStart` | 이도전 · 1학년 2학기 | 온보딩 미완료 → /explore 진입 |
-| `senior` | 김졸업 · 4학년 8학기 · 매칭률 91% | 취업 준비 최종 단계 |
+시나리오는 **목업 분석 데이터(갭·로드맵·두드림·기회 알림)** 만 바꾼다. 프로필·취업목표는 백엔드 세션에서 온다.
+
+| ID | 설명 |
+|----|------|
+| `default` | 3학년 · 매칭률 84% |
+| `coldStart` | 신입생 · 데이터 거의 없음 |
+| `senior` | 4학년 · 매칭률 91% · 지원 시기 배너 |
 
 URL 파라미터로도 전환 가능: `?scenario=coldStart`
 
@@ -29,23 +31,32 @@ URL 파라미터로도 전환 가능: `?scenario=coldStart`
 TopBar 시나리오 드롭다운 하단 **"알림 즉시 발생"** 버튼을 클릭하면
 30초/60초 타이머를 건너뛰고 DODREAM 기회 알림과 두드림 잔여 정원 업데이트가 즉시 발생합니다.
 
-## src/api/ 교체 가이드
+## 백엔드 연동 (Compass API)
 
-모든 데이터 패칭은 `src/api/index.ts`의 함수를 통해 이루어집니다.
-실제 백엔드 연동 시 해당 파일만 교체하면 됩니다.
+백엔드: `https://compass-dev-00gt.onrender.com` (스웨거 `/swagger-ui/index.html`, OpenAPI `/v3/api-docs`)
 
-```ts
-// 현재: 목업 (200–500ms 지연)
-export async function getProfile(): Promise<UserProfile> { ... }
+- **인증**: Spring 세션 쿠키(`JSESSIONID`) + CSRF. `src/api/http.ts` 가 모든 요청에 `credentials: 'include'` 를 붙이고,
+  변경 요청(POST/PUT/PATCH/DELETE) 전에 `GET /api/v1/auth/csrf` 토큰을 `X-CSRF-TOKEN` 헤더로 첨부한다.
+  `403 CSRF_INVALID` 는 재발급 후 1회 재시도, `401 UNAUTHENTICATED/SESSION_EXPIRED` 는 `sc:unauthenticated` 이벤트 → 로그인 화면.
+- **CORS**: 백엔드가 localhost 오리진을 허용하지 않으므로 개발 서버는 `vite.config.ts` 의 `/api` 프록시로 동일 출처화한다.
+  (`VITE_PROXY_TARGET` 으로 대상 변경, `VITE_API_BASE` 를 비우면 상대경로 `/api` 사용)
+  브라우저가 POST 등에 붙이는 `Origin` 헤더도 백엔드가 거부(`Invalid CORS request` 403)하므로 프록시에서 `Origin`/`Referer` 를 제거해 전달한다.
+- **로그인**: 학교 이메일 + 비밀번호. Render 개발 서버는 SMTP 가 꺼져 있어 회원가입/이메일 인증은 불가 → 백엔드가 준 테스트 계정 사용.
+- **온보딩 완료 기준**: `GET /me/onboarding` 의 `BASIC_INFO`·`MAJORS`·`PREFERENCES` 가 모두 `COMPLETED`.
+  선택 단계(프로젝트·인턴·수상·자격증)는 `/spec` 에서 기록이 생기면 `COMPLETED` 로 표시한다.
 
-// 교체 예시 (axios)
-export async function getProfile(): Promise<UserProfile> {
-  const { data } = await axios.get('/api/v1/profile');
-  return data;
-}
-```
+| 모듈 | 내용 |
+|------|------|
+| `src/api/http.ts` | fetch 래퍼, CSRF, `ApiError` |
+| `src/api/auth.ts` | 로그인 / 로그아웃 |
+| `src/api/me.ts` | 프로필, 전공, 취업목표, 온보딩, 자격증, 프로젝트·인턴·수상 CRUD, 성적표 XLSX, GitHub README |
+| `src/api/codes.ts` + `src/hooks/useCodes.ts` | 공개 코드표(전공·직무·지역·자격증·기술스택) react-query 캐시 |
+| `src/api/session.ts` | 로그인 세션 → `UserProfile`/`TargetCondition` 조립 |
+| `src/api/index.ts` | 위 모듈 re-export + **아직 백엔드가 없는 기능의 목업** (갭 분석·로드맵·채용공고·두드림·기회 알림·행동 로그) |
 
-실패율 테스트: `.env.local`에 `VITE_MOCK_FAIL_RATE=0.3` 설정 시 30% 확률로 API 실패 시뮬레이션.
+백엔드에 해당 API 가 추가되면 `src/api/index.ts` 의 목업 함수를 같은 시그니처로 교체한다.
+
+실패율 테스트: `.env.local`에 `VITE_MOCK_FAIL_RATE=0.3` 설정 시 목업 API 가 30% 확률로 실패한다.
 
 ## 매칭률 재계산 규칙
 

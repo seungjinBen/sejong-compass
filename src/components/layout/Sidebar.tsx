@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Search, Map, GraduationCap, Compass, ChevronRight } from 'lucide-react';
 import { useRoadmapStore, useUserStore } from '@/store';
 import { selectCurrentSemesterTasks } from '@/store/selectors';
+import { useCodeName } from '@/hooks/useCodes';
 
 const NAV_ITEMS = [
   { to: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
@@ -14,6 +15,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const roadmap = useRoadmapStore(s => s.roadmap);
   const target = useUserStore(s => s.target);
+  const jobName = useCodeName('job-categories');
 
   const currentMatchRate = roadmap?.currentMatchRate ?? 0;
   const targetMatchRate = roadmap?.targetMatchRate ?? 100;
@@ -63,7 +65,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-xs text-gray-500 mb-0.5">
-                {target ? `${target.targetCompany} ${target.targetRole}` : '목표 미설정'}
+                {target ? `${target.targetCompany} ${jobName(target.jobCategoryCode)}` : '목표 미설정'}
               </p>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold text-primary tabular-nums">{currentMatchRate}%</span>

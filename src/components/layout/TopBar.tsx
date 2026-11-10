@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, ExternalLink, ChevronDown, Menu, LogOut, UserRound, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore, useUIStore } from '@/store';
+import { logout as apiLogout } from '@/api/auth';
 import { getActiveScenario, setActiveScenario, scenarios } from '@/mocks/scenarios';
 import type { ScenarioId } from '@/mocks/scenarios';
 
@@ -30,11 +31,16 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
   const navigate = useNavigate();
 
   const profile = useUserStore(s => s.profile);
-  const logout = useUserStore(s => s.logout);
+  const clearUser = useUserStore(s => s.clear);
   const { opportunities, readOppIds, markOppRead } = useUIStore();
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    try {
+      await apiLogout();
+    } catch {
+      // 서버 로그아웃 실패해도 클라이언트 세션은 정리
+    }
+    clearUser();
     navigate('/login', { replace: true });
   }
   const unread = opportunities.filter(o => !readOppIds.has(o.id) && !o.read).length;
@@ -138,7 +144,7 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
             >
               <span className="text-gray-500">
                 <span className="font-medium text-ink">{profile.name}</span>
-                <span className="ml-1 text-xs text-gray-400">{profile.gradeYear}학년 {profile.semester}학기</span>
+                <span className="ml-1 text-xs text-gray-400">{profile.semester != null ? `${profile.semester}학기 이수` : profile.schoolEmail}</span>
               </span>
               <ChevronDown size={12} className="text-gray-400" />
             </button>
@@ -159,7 +165,7 @@ export function TopBar({ title, breadcrumb, onMenuClick }: TopBarProps) {
                 </button>
                 <div className="border-t border-gray-100">
                   <button
-                    onClick={() => { setProfileOpen(false); handleLogout(); }}
+                    onClick={() => { setProfileOpen(false); void handleLogout(); }}
                     className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-danger hover:bg-red-50"
                   >
                     <LogOut size={13} /> 로그아웃

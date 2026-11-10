@@ -1,35 +1,29 @@
+/**
+ * API 진입점.
+ * - 백엔드가 제공하는 기능(인증·프로필·전공·취업목표·이력·온보딩·코드표·성적표)은
+ *   ./auth, ./me, ./codes, ./session 에서 실제 Compass API 를 호출한다.
+ * - 백엔드가 아직 제공하지 않는 분석 기능(갭 분석·로드맵·채용공고·두드림·기회 알림·행동 로그)은
+ *   아래 목업 구현을 유지한다. 백엔드 추가 시 함수 단위로 교체한다.
+ */
 import type {
-  UserProfile, TargetCondition, GapAxis, JobPosting,
-  Roadmap, TaskStatus, DoDreamProgram, Opportunity,
-  BehaviorEvent, Skill, ParsedCourse, QualitativeInsight,
+  GapAxis, JobPosting, Roadmap, TaskStatus, DoDreamProgram, Opportunity,
+  BehaviorEvent, QualitativeInsight,
 } from '@/types';
 import { getActiveScenario, scenarios } from '@/mocks/scenarios';
+
+export * from './http';
+export * from './auth';
+export * from './codes';
+export * from './me';
+export * from './session';
 
 const FAIL_RATE = Number(import.meta.env['VITE_MOCK_FAIL_RATE'] ?? 0);
 
 const STORAGE_KEYS = {
-  PROFILE: 'sc:profile',
-  TARGET: 'sc:target',
   TASK_STATUS: 'sc:task_status',
   DODREAM_ADDED: 'sc:dodream_added',
   BEHAVIOR: 'sc:behavior',
-  STUDENT_INDEX: 'sc:profiles_by_student_id',
 } as const;
-
-interface StudentIndexEntry {
-  profile: UserProfile;
-  target: TargetCondition | null;
-}
-
-function getStudentIndex(): Record<string, StudentIndexEntry> {
-  const raw = localStorage.getItem(STORAGE_KEYS.STUDENT_INDEX);
-  if (!raw) return {};
-  return JSON.parse(raw) as Record<string, StudentIndexEntry>;
-}
-
-function saveStudentIndex(index: Record<string, StudentIndexEntry>): void {
-  localStorage.setItem(STORAGE_KEYS.STUDENT_INDEX, JSON.stringify(index));
-}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -92,7 +86,6 @@ function applyStatusToRoadmap(roadmap: Roadmap, map: Record<string, TaskStatus>)
   return {
     ...roadmap,
     semesters,
-    // Keep quarters in sync as backward-compat alias
     quarters: semesters,
     currentQuarter: roadmap.currentSemester,
     progressPercent,
@@ -100,118 +93,7 @@ function applyStatusToRoadmap(roadmap: Roadmap, map: Record<string, TaskStatus>)
   };
 }
 
-// ---------- Profile ----------
-
-export async function getProfile(): Promise<UserProfile | null> {
-  await randomDelay();
-  mayFail();
-  const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
-  if (raw) return JSON.parse(raw) as UserProfile;
-  return null;
-}
-
-export async function saveProfile(p: Partial<UserProfile>): Promise<UserProfile> {
-  await randomDelay();
-  mayFail();
-  const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
-  const existing = raw ? (JSON.parse(raw) as UserProfile) : getScenarioData().profile;
-  const merged = { ...existing, ...p };
-  localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(merged));
-
-  if (merged.studentId) {
-    const index = getStudentIndex();
-    const prevTarget = index[merged.studentId]?.target ?? null;
-    index[merged.studentId] = { profile: merged, target: prevTarget };
-    saveStudentIndex(index);
-  }
-
-  return merged;
-}
-
-// ---------- Student ID lookup (login / duplicate check) ----------
-
-export async function checkStudentIdAvailable(studentId: string): Promise<boolean> {
-  await randomDelay();
-  const index = getStudentIndex();
-  return !(studentId in index);
-}
-
-export async function loginWithStudentId(
-  studentId: string,
-): Promise<{ profile: UserProfile; target: TargetCondition | null } | null> {
-  await randomDelay();
-  mayFail();
-  const index = getStudentIndex();
-  const entry = index[studentId];
-  if (!entry) return null;
-  localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(entry.profile));
-  if (entry.target) localStorage.setItem(STORAGE_KEYS.TARGET, JSON.stringify(entry.target));
-  return entry;
-}
-
-export async function getMockProfileForImport(): Promise<UserProfile> {
-  await delay(1000);
-  return { ...getScenarioData().profile };
-}
-
-export async function getMockTargetForImport(): Promise<TargetCondition> {
-  await delay(500);
-  const target = getScenarioData().target;
-  if (!target) throw new Error('No target for this scenario');
-  return { ...target };
-}
-
-export async function parseTranscript(_file: File): Promise<{ courses: ParsedCourse[]; skills: Skill[] }> {
-  await delay(1200);
-  mayFail();
-  const mockCourses: ParsedCourse[] = [
-    { name: '객체지향프로그래밍', grade: 'A0', semester: '2025-1', mappedSkills: [{ id: 'skill-java', name: 'Java', category: 'LANG', proficiency: 0.5, evidences: [{ kind: 'COURSE', label: '객체지향프로그래밍(A0)', weight: 0.5 }] }] },
-    { name: '데이터베이스', grade: 'B+', semester: '2025-2', mappedSkills: [{ id: 'skill-sql', name: 'SQL', category: 'DB', proficiency: 0.5, evidences: [{ kind: 'COURSE', label: '데이터베이스(B+)', weight: 0.5 }] }] },
-    { name: '웹서버 프로그래밍', grade: 'B+', semester: '2026-1', mappedSkills: [{ id: 'skill-spring', name: 'Spring Boot', category: 'FW', proficiency: 0.35, evidences: [{ kind: 'COURSE', label: '웹서버 프로그래밍(B+)', weight: 0.35 }] }] },
-    { name: '파이썬프로그래밍', grade: 'A+', semester: '2024-2', mappedSkills: [{ id: 'skill-python', name: 'Python', category: 'LANG', proficiency: 0.4, evidences: [{ kind: 'COURSE', label: '파이썬프로그래밍(A+)', weight: 0.4 }] }] },
-    { name: '운영체제', grade: 'A+', semester: '2025-1', mappedSkills: [] },
-    { name: '알고리즘', grade: 'A0', semester: '2025-2', mappedSkills: [] },
-  ];
-  const skills = mockCourses.flatMap(c => c.mappedSkills ?? []);
-  return { courses: mockCourses, skills };
-}
-
-export async function parseGithub(_url: string): Promise<Skill[]> {
-  await delay(1000);
-  mayFail();
-  return [
-    { id: 'skill-git', name: 'Git', category: 'TOOL', proficiency: 0.75, evidences: [{ kind: 'GITHUB', label: 'GitHub: 12 repos', weight: 0.5 }] },
-    { id: 'skill-python', name: 'Python', category: 'LANG', proficiency: 0.2, evidences: [{ kind: 'GITHUB', label: 'GitHub: 5 Python repos', weight: 0.2 }] },
-  ];
-}
-
-// ---------- Target ----------
-
-export async function getTarget(): Promise<TargetCondition | null> {
-  await randomDelay();
-  const raw = localStorage.getItem(STORAGE_KEYS.TARGET);
-  if (raw) return JSON.parse(raw) as TargetCondition;
-  return null;
-}
-
-export async function saveTarget(t: TargetCondition): Promise<void> {
-  await randomDelay();
-  mayFail();
-  localStorage.setItem(STORAGE_KEYS.TARGET, JSON.stringify(t));
-
-  const rawProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
-  const activeProfile = rawProfile ? (JSON.parse(rawProfile) as UserProfile) : null;
-  if (activeProfile?.studentId) {
-    const index = getStudentIndex();
-    const entry = index[activeProfile.studentId];
-    if (entry) {
-      index[activeProfile.studentId] = { ...entry, target: t };
-      saveStudentIndex(index);
-    }
-  }
-}
-
-// ---------- Gap Analysis ----------
+// ---------- Gap Analysis (mock) ----------
 
 export async function getGapAnalysis(): Promise<{
   matchRate: number;
@@ -230,7 +112,7 @@ export async function getGapAnalysis(): Promise<{
   };
 }
 
-// ---------- Jobs ----------
+// ---------- Jobs (mock) ----------
 
 export async function getMatchedJobs(_filter?: { jobField?: string; region?: string; sort?: string }): Promise<JobPosting[]> {
   await randomDelay();
@@ -255,7 +137,7 @@ export async function getJobsList(_filter?: { jobField?: string; region?: string
   return [...defaultJobs];
 }
 
-// ---------- Roadmap ----------
+// ---------- Roadmap (mock) ----------
 
 export async function generateRoadmap(_jobId?: string): Promise<Roadmap> {
   const steps = ['스펙 분석 중', '공고 208건 대조 중', '갭 산출 중', '로드맵 생성 중'];
@@ -303,10 +185,9 @@ export function getDoDreamAddedIdSet(): Set<string> {
 
 export async function addDoDreamTask(_program: DoDreamProgram): Promise<void> {
   await randomDelay();
-  // Stored via Zustand; this just simulates network round-trip
 }
 
-// ---------- DoDream ----------
+// ---------- DoDream (mock) ----------
 
 export async function getDoDreamPrograms(_filter?: { category?: string; creditLinked?: boolean; gapRelated?: boolean }): Promise<DoDreamProgram[]> {
   await randomDelay();
@@ -314,7 +195,7 @@ export async function getDoDreamPrograms(_filter?: { category?: string; creditLi
   return [...getScenarioData().dodreamPrograms];
 }
 
-// ---------- Opportunities ----------
+// ---------- Opportunities (mock) ----------
 
 export async function getOpportunities(): Promise<Opportunity[]> {
   await randomDelay();
@@ -326,7 +207,7 @@ export async function markOpportunityRead(_id: string): Promise<void> {
   await randomDelay();
 }
 
-// ---------- Behavior Log ----------
+// ---------- Behavior Log (mock) ----------
 
 export async function logBehavior(e: BehaviorEvent): Promise<void> {
   const raw = localStorage.getItem(STORAGE_KEYS.BEHAVIOR);
